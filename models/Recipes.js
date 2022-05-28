@@ -1,6 +1,6 @@
-import moongose from "mongoose";
+import mongoose from "mongoose";
 
-const RecipesSchema = moongose.Schema(
+const RecipesSchema = mongoose.Schema(
   {
     name: {
       required: true,
@@ -24,12 +24,30 @@ const RecipesSchema = moongose.Schema(
       required: true,
       min: 30,
     },
+    ingredients: [
+      {
+        type: String,
+      },
+    ],
+    timecook: {
+      type: String,
+      required: true,
+    },
+    tutorial: {
+      type: String,
+      required: true,
+      min: 30,
+    },
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Users",
+    },
   },
   {
     timestamps: true,
   }
 );
 
-const Recipes = moongose.model("Recipes", RecipesSchema);
+const Recipes = mongoose.model("Recipes", RecipesSchema);
 
 export default Recipes;

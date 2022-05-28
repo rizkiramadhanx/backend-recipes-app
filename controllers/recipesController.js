@@ -1,7 +1,6 @@
 import Recipes from "../models/Recipes.js";
-import asyncHandler from "express-async-handler";
 
-export const addRecipe = asyncHandler(async (req, res) => {
+export const addRecipe = async (req, res) => {
   try {
     const { name, description, tutorial, country, city } = req.body;
     const tag = req.body;
@@ -31,4 +30,4 @@ export const addRecipe = asyncHandler(async (req, res) => {
   } catch (error) {
     console.log(error);
   }
-});
+};
