@@ -1,18 +1,18 @@
 import jwt from "jsonwebtoken";
 
-export const verifyToken = (req, res, token) => {
+export const verifyToken = (req, res, next) => {
   const tokenVerif = req.session.token;
 
   if (!tokenVerif) {
-    return res.status(403).send({ message: "No token provided!" });
+    return res.status(403).send({ message: "Silahkan login kembali" });
   }
 
   jwt.verify(tokenVerif, process.env.JWT_SECRET_KEY, (err, decoded) => {
     if (err) {
-      return res.status(401).send({ message: "Unauthorized!" });
+      return res.status(401).send({ message: "Silahkan login kembali" });
     }
 
-    res.send(decoded.id);
+    req.userId = decoded.id;
     next();
   });
 };

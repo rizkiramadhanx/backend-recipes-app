@@ -6,8 +6,16 @@ import bcrypt from "bcrypt";
 export const register = async (req, res) => {
   const { username, email, password } = req.body;
 
+  function hasWhiteSpace(s) {
+    return s.indexOf(" ") >= 0;
+  }
+
   try {
     if (username) {
+      if (hasWhiteSpace) {
+        res.status(401).json({ message: "Username diisi tanpa spasi" });
+        return;
+      }
       const usernameValidation = await User.findOne({ username: username });
       if (usernameValidation) {
         res.status(401).json({ message: "Username Sudah terdaftar" });
@@ -56,7 +64,7 @@ export const login = (req, res) => {
     }
 
     let token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: 86400,
+      expiresIn: "2h",
     });
 
     req.session.token = token;

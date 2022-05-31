@@ -24,6 +24,8 @@ const UserSchema = mongoose.Schema({
 });
 
 UserSchema.pre("save", function (next) {
+  this.username = this.username.toLowerCase();
+
   if (!this.isModified("password")) {
     next();
   }
@@ -36,6 +38,6 @@ UserSchema.pre("save", function (next) {
   next();
 });
 
-const User = mongoose.model("User", UserSchema);
+const User = mongoose.model("Users", UserSchema);
 
 export default User;

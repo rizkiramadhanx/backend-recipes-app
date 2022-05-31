@@ -24,13 +24,11 @@ const RecipesSchema = mongoose.Schema(
       required: true,
       min: 30,
     },
-    ingredients: [
-      {
-        type: String,
-      },
-    ],
-    timecook: {
+    ingredients: {
       type: String,
+    },
+    timecook: {
+      type: Number,
       required: true,
     },
     tutorial: {
@@ -41,6 +39,10 @@ const RecipesSchema = mongoose.Schema(
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Users",
+      required: true,
+    },
+    category: {
+      type: String,
     },
   },
   {

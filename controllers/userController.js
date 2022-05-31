@@ -42,3 +42,15 @@ export const getFavoriteById = async (req, res) => {
     console.log(error);
   }
 };
+
+export const DataSpecificById = async (req, res) => {
+  const id = req.params.idUser;
+  try {
+    const data = await User.findOne({ _id: id }, "-password").populate(
+      "favorites"
+    );
+    res.status(200).json({ data: data });
+  } catch (error) {
+    console.log(error);
+  }
+};
