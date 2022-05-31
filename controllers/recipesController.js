@@ -2,17 +2,38 @@ import Recipes from "../models/Recipes.js";
 import User from "../models/User.js";
 
 export const getAllRecipes = async (req, res) => {
-  const category = req.query.category;
+  let category = req.query.category;
+  let search = req.query.search;
 
-  if (category) {
-    return res.status(200).json({ data: category });
-  }
-  try {
-    const recipe = await Recipes.find().populate("author", "username -_id");
+  if (category || search) {
+    if (!search) search = 0;
+    if (!category) category = 0;
+    const data = await Recipes.find({
+      $or: [
+        {
+          name: new RegExp(search, "i"),
+        },
+        {
+          category: new RegExp(category, "i"),
+        },
+      ],
+    }).populate("author", "username -_id");
 
-    res.status(200).json({ data: recipe });
-  } catch (error) {
-    console.log(error);
+    if (!data[0]) {
+      return res.status(200).json({ message: "Data tidak ditemukan" });
+    }
+
+    return res.status(200).json({ data: data });
+  } else {
+    const data = await Recipes.find({}, "-__v").populate(
+      "author",
+      "username -_id"
+    );
+
+    if (data) {
+      return res.status(200).json({ message: "Data ditemukan", data: data });
+    }
+    return res.status(200).json({ message: "Data tidak ditemukan" });
   }
 };
 
@@ -26,6 +47,7 @@ export const addRecipe = async (req, res) => {
       city,
       ingredients,
       timecook,
+      category,
     } = req.body;
     const author = req.userId;
 
@@ -39,6 +61,7 @@ export const addRecipe = async (req, res) => {
       },
       ingredients,
       timecook,
+      category,
       author: author,
     });
 
@@ -97,4 +120,80 @@ export const favoriteRecipesByUsername = async (req, res) => {
   } catch (error) {
     console.log(error);
   }
+};
+
+export const getAllRecipesByCategory = (req, res) => {
+  const category = req.params.category;
+
+  Recipes.find({ category: category }).exec((err, Recipes) => {
+    if (err) return res.status(401);
+    if (!Recipes[0]) {
+      return res.status(200).json({ message: "Data tidak ditemukan" });
+    }
+
+    res.status(200).json({ message: "Data ditemukan", data: Recipes });
+  });
+};
+
+export const myRecipes = (req, res) => {
+  const id = req.userId;
+
+  Recipes.find({ author: id }, "-__v")
+    .populate("author", "username")
+    .exec(function (err, Recipes) {
+      if (err) res.status(401);
+
+      res.status(200).json({ message: "Data ditemukan", data: Recipes });
+    });
+};
+
+export const editRecipes = async (req, res) => {
+  const {
+    name,
+    description,
+    tutorial,
+    country,
+    city,
+    ingredients,
+    timecook,
+    category,
+  } = req.body;
+
+  const idRecipe = req.params.idRecipe;
+
+  if (!idRecipe) {
+    res.status(200).json({ message: "Kamu tidak mempunyai akses ini" });
+  }
+
+  Recipes.findOne({ _id: idRecipe }, "-__v")
+    .populate("author")
+    .exec(async function (err, recipes) {
+      if (err) return res.status(401).json({ message: err });
+
+      const hasAuth = recipes.author._id == req.userId;
+
+      if (!hasAuth) {
+        return res
+          .status(401)
+          .json({ message: "Kamu tidak mempunyai akses ini" });
+      }
+
+      const data1 = await Recipes.findById(recipes.id);
+      Recipes.findOneAndUpdate(
+        recipes.id,
+        {
+          name,
+          description,
+          tutorial,
+          country,
+          city,
+          ingredients,
+          timecook,
+          category,
+        },
+        function (err, data) {
+          return res.status(201).json({ message: "Data sudah terupdate" });
+        }
+      );
+    });
 };

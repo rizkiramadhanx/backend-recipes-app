@@ -43,12 +43,21 @@ const RecipesSchema = mongoose.Schema(
     },
     category: {
       type: String,
+      required: true,
     },
   },
   {
     timestamps: true,
   }
 );
+
+RecipesSchema.pre("save", function (next) {
+  this.category = this.category.toLowerCase();
+  if (!this.isModified("category")) {
+    next();
+  }
+  next();
+});
 
 const Recipes = mongoose.model("Recipes", RecipesSchema);
 
