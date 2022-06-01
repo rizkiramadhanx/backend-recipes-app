@@ -225,6 +225,9 @@ export const deleteRecipe = (req, res) => {
     .exec(async function (err, recipes) {
       if (err) return res.status(401).json({ message: err });
 
+      if (!recipes) return res.status(401).json({ message: "Alamat salah" });
+
+      // return res.send(recipes);
       const hasAuth = recipes.author._id == req.userId;
 
       if (!hasAuth) {
@@ -234,7 +237,23 @@ export const deleteRecipe = (req, res) => {
       }
 
       Recipes.findByIdAndDelete(recipes.id, function (err, data) {
-        return res.status(201).json({ message: "Data sudah terhapus" });
+        User.find({}, async function (err, user) {
+          let data = user.filter((car) => car.favorites.includes(idRecipe));
+
+          let filterdata = data.map((e) => e._id);
+
+          const user1 = await User.updateMany(
+            { _id: { $in: filterdata } },
+            {
+              $pullAll: {
+                favorites: [{ _id: idRecipe }],
+              },
+            }
+          );
+          return res
+            .status(201)
+            .json({ message: "Data sudah terhapus", data: user1 });
+        });
       });
     });
 };

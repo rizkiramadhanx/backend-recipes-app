@@ -33,11 +33,11 @@ export const deleteFavorite = async (req, res) => {
 };
 
 export const getFavoriteById = async (req, res) => {
-  const id = req.params.id;
+  const id = req.params.idUser;
 
   try {
-    const favorite = await User.find({ _id: id }).populate("recipes");
-    res.json({ favorite: favorite });
+    const user = await User.findOne({ _id: id }).populate("favorites");
+    return res.status(200).json({ data: user.favorites });
   } catch (error) {
     console.log(error);
   }
