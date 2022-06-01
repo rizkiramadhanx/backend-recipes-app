@@ -1,13 +1,15 @@
 import express from "express";
 import {
   addRecipe,
-  editRecipes,
+  editRecipe,
   favoriteRecipesByUsername,
   getAllRecipes,
   getAllRecipesByCategory,
+  getRecipe,
   myFavoriteRecipes,
   myRecipes,
-  searchRecipes,
+  deleteRecipe,
+  // searchRecipes,
 } from "../controllers/recipesController.js";
 import { DataSpecificById } from "../controllers/userController.js";
 import { verifyToken } from "../middlewares/authentication.js";
@@ -21,7 +23,8 @@ router.route("/favorite").get([verifyToken], myFavoriteRecipes);
 router.route("/favorite/:username").get(favoriteRecipesByUsername);
 router.route("/category/:category").get(getAllRecipesByCategory);
 router.route("/my").get([verifyToken], myRecipes);
-router.route("/my/:idRecipe").put([verifyToken], editRecipes);
-router.route("/my").get([verifyToken], myRecipes);
+router.route("/recipe/:idRecipe").put([verifyToken], editRecipe);
+router.route("/recipe/:idRecipe").delete([verifyToken], deleteRecipe);
+router.route("/recipe/:idRecipe").get(getRecipe);
 
 export default router;

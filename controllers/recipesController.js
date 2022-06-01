@@ -147,7 +147,7 @@ export const myRecipes = (req, res) => {
     });
 };
 
-export const editRecipes = async (req, res) => {
+export const editRecipe = async (req, res) => {
   const {
     name,
     description,
@@ -195,5 +195,46 @@ export const editRecipes = async (req, res) => {
           return res.status(201).json({ message: "Data sudah terupdate" });
         }
       );
+    });
+};
+
+export const getRecipe = (req, res) => {
+  const id = req.params.idRecipe;
+
+  Recipes.findOne({ _id: id }).exec(function (err, recipe) {
+    if (!recipe) {
+      return res.status(401).json({ message: "data tidak ditemukan" });
+    }
+    res.status(200).json({
+      message: "data ditemukan",
+      data: recipe,
+    });
+    return;
+  });
+};
+
+export const deleteRecipe = (req, res) => {
+  const idRecipe = req.params.idRecipe;
+
+  if (!idRecipe) {
+    res.status(200).json({ message: "Kamu tidak mempunyai akses ini" });
+  }
+
+  Recipes.findOne({ _id: idRecipe }, "-__v")
+    .populate("author")
+    .exec(async function (err, recipes) {
+      if (err) return res.status(401).json({ message: err });
+
+      const hasAuth = recipes.author._id == req.userId;
+
+      if (!hasAuth) {
+        return res
+          .status(401)
+          .json({ message: "Kamu tidak mempunyai akses ini" });
+      }
+
+      Recipes.findByIdAndDelete(recipes.id, function (err, data) {
+        return res.status(201).json({ message: "Data sudah terhapus" });
+      });
     });
 };

@@ -1,5 +1,4 @@
 import User from "../models/User.js";
-import generateToken from "../utils/generateToken.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
@@ -12,9 +11,8 @@ export const register = async (req, res) => {
 
   try {
     if (username) {
-      if (hasWhiteSpace) {
-        res.status(401).json({ message: "Username diisi tanpa spasi" });
-        return;
+      if (hasWhiteSpace(username)) {
+        return res.status(401).json({ message: "Username diisi tanpa spasi" });
       }
       const usernameValidation = await User.findOne({ username: username });
       if (usernameValidation) {
