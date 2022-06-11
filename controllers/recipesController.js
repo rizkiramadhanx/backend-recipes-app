@@ -1,5 +1,6 @@
 import Recipes from "../models/Recipes.js";
 import User from "../models/User.js";
+import cloudinary from "../utils/cloudinary.js";
 
 export const getAllRecipes = async (req, res) => {
   let category = req.query.category;
@@ -51,24 +52,48 @@ export const addRecipe = async (req, res) => {
     } = req.body;
     const author = req.userId;
 
-    const recipe = await Recipes.create({
-      name,
-      description,
-      tutorial,
-      origin: {
-        country,
-        city,
-      },
-      ingredients,
-      timecook,
-      category,
-      author: author,
-    });
+    const checkName = await Recipes.find({ name: name });
 
-    res.status(201).json({
-      message: "Data telah ditambahkan",
-      data: recipe,
-    });
+    if (checkName[0])
+      return res
+        .status(401)
+        .json({ message: "Nama tidak boleh sama", ja: checkName });
+
+    cloudinary.uploader.upload(
+      req.file.path,
+      {
+        public_id:
+          "recipes/" +
+          req.file.path.replace(/\\/g, "/").split("/").slice(-1)[0],
+        crop: "fill",
+      },
+      function (err) {
+        if (err) return res.status(401).send("images belum diupload");
+        Recipes.create(
+          {
+            name,
+            description,
+            tutorial,
+            origin: {
+              country,
+              city,
+            },
+            ingredients,
+            timecook,
+            category,
+            author: author,
+            image_id: req.file.path.replace(/\\/g, "/").split("/").slice(-1)[0],
+          },
+          function (err, recipe) {
+            if (!recipe) return res.send(err);
+            res.status(201).json({
+              message: "Data telah ditambahkan",
+              data: recipe,
+            });
+          }
+        );
+      }
+    );
   } catch (error) {
     console.log(error);
   }
@@ -171,6 +196,7 @@ export const editRecipe = async (req, res) => {
       if (err) return res.status(401).json({ message: err });
 
       const hasAuth = recipes.author._id == req.userId;
+      let image_id = recipes.image_id;
 
       if (!hasAuth) {
         return res
@@ -178,23 +204,68 @@ export const editRecipe = async (req, res) => {
           .json({ message: "Kamu tidak mempunyai akses ini" });
       }
 
-      const data1 = await Recipes.findById(recipes.id);
-      Recipes.findOneAndUpdate(
-        recipes.id,
-        {
-          name,
-          description,
-          tutorial,
-          country,
-          city,
-          ingredients,
-          timecook,
-          category,
-        },
-        function (err, data) {
-          return res.status(201).json({ message: "Data sudah terupdate" });
-        }
-      );
+      if (req.file) {
+        cloudinary.uploader.destroy(
+          "recipes/" + recipes.image_id,
+          async function (err, cb) {
+            if (cb.result === "not found")
+              return res.json({ message: "Image id salah" });
+
+            cloudinary.uploader.upload(
+              req.file.path,
+              {
+                public_id:
+                  "recipes/" +
+                  req.file.path.replace(/\\/g, "/").split("/").slice(-1)[0],
+                crop: "fill",
+              },
+              function () {
+                Recipes.findOneAndUpdate(
+                  recipes.id,
+                  {
+                    name,
+                    description,
+                    tutorial,
+                    country,
+                    city,
+                    ingredients,
+                    timecook,
+                    category,
+                    image_id: req.file.path
+                      .replace(/\\/g, "/")
+                      .split("/")
+                      .slice(-1)[0],
+                  },
+                  function (err, data) {
+                    return res
+                      .status(201)
+                      .json({ message: "Data sudah terupdate" });
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+
+      if (!req.file) {
+        Recipes.findOneAndUpdate(
+          recipes.id,
+          {
+            name,
+            description,
+            tutorial,
+            country,
+            city,
+            ingredients,
+            timecook,
+            category,
+          },
+          function (err, data) {
+            return res.status(201).json({ message: "Data sudah terupdate" });
+          }
+        );
+      }
     });
 };
 
@@ -227,7 +298,6 @@ export const deleteRecipe = (req, res) => {
 
       if (!recipes) return res.status(401).json({ message: "Alamat salah" });
 
-      // return res.send(recipes);
       const hasAuth = recipes.author._id == req.userId;
 
       if (!hasAuth) {
@@ -235,6 +305,14 @@ export const deleteRecipe = (req, res) => {
           .status(401)
           .json({ message: "Kamu tidak mempunyai akses ini" });
       }
+
+      cloudinary.uploader.destroy(
+        "recipes/" + recipes.image_id,
+        async function (err, cb) {
+          if (cb.result === "not found")
+            return res.json({ message: "Image id salah" });
+        }
+      );
 
       Recipes.findByIdAndDelete(recipes.id, function (err, data) {
         User.find({}, async function (err, user) {
@@ -250,6 +328,7 @@ export const deleteRecipe = (req, res) => {
               },
             }
           );
+
           return res
             .status(201)
             .json({ message: "Data sudah terhapus", data: user1 });

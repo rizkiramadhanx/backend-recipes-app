@@ -7,10 +7,14 @@ import recipesRouter from "./routes/recipesRoute.js";
 import userRouter from "./routes/userRoute.js";
 import cookieSession from "cookie-session";
 
+import cloudinary from "./utils/cloudinary.js";
+import bodyParser from "body-parser";
+
 const app = express();
 dotenv.config();
 const PORT = process.env.PORT;
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 connectDB();
 
 // Test Server

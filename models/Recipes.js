@@ -45,6 +45,10 @@ const RecipesSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    image_id: {
+      type: String,
+      required: true,
+    },
   },
   {
     timestamps: true,
